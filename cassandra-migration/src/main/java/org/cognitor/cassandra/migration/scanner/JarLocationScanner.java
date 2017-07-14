@@ -32,13 +32,23 @@ public class JarLocationScanner implements ClassPathLocationScanner {
         notNullOrEmpty(location, "location");
         notNull(locationUri, "locationUri");
         LOGGER.debug("Scanning in jar {} in location {}", locationUri, location);
-        try(FileSystem fileSystem = FileSystems.newFileSystem(locationUri, emptyMap())) {
+        try(FileSystem fileSystem = getFileSystem(locationUri)) {
             final Path systemPath = fileSystem.getPath(location);
             return Files.walk(systemPath)
                     .filter(Files::isRegularFile)
                     .map(path -> normalizePath(path.toString()))
                     .collect(toSet());
         }
+    }
+
+    private FileSystem getFileSystem(URI locationUri) throws IOException {
+        FileSystem fileSystem = FileSystems.getFileSystem(locationUri);
+
+        if (fileSystem != null) {
+            return fileSystem;
+        }
+
+        return FileSystems.newFileSystem(locationUri, emptyMap());
     }
 
     private static String normalizePath(String pathName) {
